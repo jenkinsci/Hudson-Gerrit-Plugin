@@ -5,53 +5,26 @@ import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Result;
+import hudson.model.TaskListener;
 import hudson.plugins.gerrit.GerritNotifier;
 import hudson.plugins.git.*;
-import hudson.plugins.git.util.Build;
-import hudson.plugins.git.util.BuildData;
-import hudson.plugins.git.util.ExtensionBuildChooser;
-import hudson.plugins.git.util.GitUtils;
+import hudson.plugins.git.util.*;
 import hudson.util.DescribableList;
 import org.joda.time.DateTime;
+import org.kohsuke.stapler.DataBoundConstructor;
 import org.spearce.jgit.lib.ObjectId;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 @Extension
-public class GerritBuildChooser extends ExtensionBuildChooser {
+public class GerritBuildChooser extends BuildChooser {
 
-    private boolean isRequired = false;
     private final String separator = "#";
-    private IGitAPI               git;
-    private GitUtils utils;
-    private GitSCM                gitSCM;
 
-    //-------- Data -----------
-    private BuildData data;
-
+    @DataBoundConstructor
     public GerritBuildChooser() {
-        this.gitSCM = null;
-        this.git = null;
-        this.utils = null;
-        this.data = null;
-
-    }
-
-    public GerritBuildChooser(GitSCM gitSCM, IGitAPI git, GitUtils utils, BuildData data)
-    {
-        this.gitSCM = gitSCM;
-        this.git = git;
-        this.utils = utils;
-        this.data = data == null ? new BuildData() : data;
-    }
-    
-    @Override
-    public void setUtilities(GitSCM gitSCM, IGitAPI git, GitUtils gitUtils) {
-        this.gitSCM = gitSCM;
-        this.git = git;
-        this.utils = gitUtils;
-        this.data = data == null ? new BuildData() : data;
     }
 
     /**
@@ -64,21 +37,11 @@ public class GerritBuildChooser extends ExtensionBuildChooser {
      * @throws IOException
      * @throws GitException
      */
-    @Override
-    public Collection<Revision> getCandidateRevisions(boolean isPollCall, String singleBranch)
-            throws GitException, IOException {
+    public Collection<Revision> getCandidateRevisions(boolean isPollCall, String singleBranch,
+                                                      IGitAPI git, TaskListener listener, BuildData data)
+        throws GitException, IOException {
 
-        Build lastTimeBased = data.getLastBuildOfBranch("timebased");
-
-        Revision last = null;
-        if(lastTimeBased != null) {
-            last = data.getLastBuildOfBranch("timebased").getRevision();
-            if(!last.getSha1String().equals(data.getLastBuiltRevision().getSha1String())) {
-                //previous build wasn't timebased, so consider this as a new start
-                last = null;
-            }
-        }
-
+        Revision last = data.getLastBuiltRevision();
         String result = git.getAllLogEntries(singleBranch);
         Collection<TimedCommit> commits = sortRevList(result);
         Iterator<TimedCommit> i = commits.iterator();
@@ -123,7 +86,7 @@ public class GerritBuildChooser extends ExtensionBuildChooser {
     private Collection<TimedCommit> sortRevList(String logOutput) {
         SortedSet<TimedCommit> timedCommits = new TreeSet<TimedCommit>();
         String[] lines = logOutput.split("\n");
-        for (String s : lines ) {
+        for (String s : lines) {
             timedCommits.add(parseCommit(s));
         }
 
@@ -135,10 +98,10 @@ public class GerritBuildChooser extends ExtensionBuildChooser {
         String[] lines = line.split(separator);
         /*Line has ' in the beginning and in the end */
         String id = lines[0].substring(1);
-        String date = lines[1].substring(0, lines[1].length() - 1 );
+        String date = lines[1].substring(0, lines[1].length() - 1);
         //From seconds to milliseconds
         return new TimedCommit(ObjectId.fromString(id),
-                new DateTime(Long.parseLong(date) * 1000));
+                               new DateTime(Long.parseLong(date) * 1000));
     }
 
     private class TimedCommit implements Comparable<TimedCommit> {
@@ -155,7 +118,6 @@ public class GerritBuildChooser extends ExtensionBuildChooser {
             return commit;
         }
 
-        @Override
         public int compareTo(TimedCommit o) {
             //I want newest to be first
             int result = -(when.compareTo(o.when));
@@ -165,39 +127,19 @@ public class GerritBuildChooser extends ExtensionBuildChooser {
             }
             return result;
         }
-     }
-
-    @Override
-    public Build revisionBuilt(Revision revision, int buildNumber, Result result )
-    {
-        Build build = new Build(revision, buildNumber, result);
-        data.saveBuild(build);
-        return build;
     }
 
+    @Extension
+    public static final class DescriptorImpl extends BuildChooserDescriptor {
+        @Override
+        public String getDisplayName() {
+            return "Gerrit-Plugin";
+        }
 
-    @Override
-    public Action getData()
-    {
-        return data;
+        @Override
+        public String getLegacyId() {
+            return "Gerrit";
+        }
     }
-
-    @Override
-    public String getName() {
-        return "Gerrit-Plugin";
-    }
-
-       /**
-     * Is this build chooser required to be used. Useful when some other
-     * functionality depends on using this specific build chooser. Defaults to false
-     *  * @return
-     */
-    @Override
-    public boolean isRequiredFor(AbstractProject p) {
-           //If GerritNotifier is in publisher list, it's required to use this BuildChooser
-           DescribableList list = p.getPublishersList();
-           return list.get(GerritNotifier.class) != null;
-
-       }
 
 }
