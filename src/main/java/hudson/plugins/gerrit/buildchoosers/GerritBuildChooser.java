@@ -98,7 +98,15 @@ public class GerritBuildChooser extends BuildChooser {
         String[] lines = line.split(separator);
         /*Line has ' in the beginning and in the end */
         String id = lines[0].substring(1);
+        if(!lines[0].startsWith("\'")) {
+            id = lines[0];
+        }
         String date = lines[1].substring(0, lines[1].length() - 1);
+        if(!lines[1].endsWith("\'"))
+        {
+            date = lines[1];
+
+        }
         //From seconds to milliseconds
         return new TimedCommit(ObjectId.fromString(id),
                                new DateTime(Long.parseLong(date) * 1000));
