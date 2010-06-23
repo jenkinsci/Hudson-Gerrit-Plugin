@@ -8,7 +8,7 @@
     </parent>
 
     <artifactId>gerrit</artifactId>
-    <version>0.5-SNAPSHOT</version>
+    <version>0.5</version>
     <packaging>hpi</packaging>
     <name>Hudson Gerrit plugin</name>
     <description>Plugin for reporting build results to Gerrit</description>
