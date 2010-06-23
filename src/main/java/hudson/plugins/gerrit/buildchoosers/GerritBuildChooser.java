@@ -144,10 +144,6 @@ public class GerritBuildChooser extends BuildChooser {
             return "Gerrit-Plugin";
         }
 
-        @Override
-        public String getLegacyId() {
-            return "Gerrit";
-        }
     }
 
 }
