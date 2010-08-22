@@ -130,9 +130,9 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:git://github.com/jyrkiput/Hudson-Gerrit-Plugin.git</connection>
-        <developerConnection>scm:git:git@github.com:jyrkiput/Hudson-Gerrit-Plugin.git</developerConnection>
-        <url>http://github.com/jyrkiput/Hudson-Gerrit-Plugin</url>
+        <connection>scm:git:git://github.com/hudson/Hudson-Gerrit-Plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:hudson/Hudson-Gerrit-Plugin.git</developerConnection>
+        <url>http://github.com/hudson/Hudson-Gerrit-Plugin</url>
     </scm>
 </project>
 
