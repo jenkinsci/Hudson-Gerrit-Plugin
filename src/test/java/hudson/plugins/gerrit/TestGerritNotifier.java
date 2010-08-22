@@ -8,6 +8,7 @@ import hudson.remoting.VirtualChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.jvnet.hudson.test.FailureBuilder;
+import org.jvnet.hudson.test.MockBuilder;
 import org.jvnet.hudson.test.UnstableBuilder;
 import org.mockito.Mock;
 
@@ -73,6 +74,15 @@ public class TestGerritNotifier extends GerritNotifierTestCase {
         assertEquals(Result.FAILURE, build.getResult());
         String command = notifier.generateFailedCommand(notifier.getBuildUrl(build, listener), hexString);
         verify(marker).executeCommand(command);
-    }    
+    }
+
+    @Test
+    public void testAbortedBuild() throws IOException, ExecutionException, InterruptedException {
+
+        final Build build = doBuild(new MockBuilder(Result.ABORTED));
+        assertEquals(Result.ABORTED, build.getResult());
+        String command = notifier.generateDidNotFinishCommand(notifier.getBuildUrl(build, listener), hexString);
+        verify(marker).executeCommand(command);
+    }
 }
 

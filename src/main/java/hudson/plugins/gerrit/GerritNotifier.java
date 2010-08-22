@@ -17,7 +17,6 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
-import org.eclipse.jgit.lib.ObjectId;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -132,21 +131,9 @@ public class GerritNotifier extends Notifier implements Serializable {
         return generateComment(reject_value, "Build failed " + jobUrl, revision);
     }
 
-    public String getUnstableCommand() {
-        return "ssh://" + gerrit_username + "@" + gerrit_host + ":"+ gerrit_port + " " +
-                generateUnstableCommand("JOB_URL", "Revision");
+    public String generateDidNotFinishCommand(final String jobUrl, final String revision) {
+        return generateComment("0", "Build did not finish, " + jobUrl, revision);
     }
-    public String getFailedCommand() {
-        return "ssh://" + gerrit_username + "@" + gerrit_host + ":"+ gerrit_port + " " +
-                generateFailedCommand("JOB_URL", "Revision");
-    }
-
-   public String getApproveCommand() {
-        return "ssh://" + gerrit_username + "@" + gerrit_host + ":"+ gerrit_port + " " +
-                generateApproveCommand("JOB_URL", "Revision");
-    }
-
-
 
     private void verifyGerrit(String message)
             throws IOException, InterruptedException {
@@ -185,18 +172,22 @@ public class GerritNotifier extends Notifier implements Serializable {
             Result r = build.getResult();
 
             String buildUrl = getBuildUrl(build, listener);
-
-            if (r.isBetterOrEqualTo(Result.SUCCESS)) {
-                listener.getLogger().println("Approving " + head);
-                verifyGerrit(generateApproveCommand(buildUrl, head));
-            } else if (r.isBetterOrEqualTo(Result.UNSTABLE)) {
-                listener.getLogger().println("Rejecting unstable " + head);
-                verifyGerrit(generateUnstableCommand(buildUrl, head));
+            if (r == Result.ABORTED || r == Result.NOT_BUILT) {
+                listener.getLogger().println("Build was aborted, notifying gerrit");
+                verifyGerrit(generateDidNotFinishCommand(buildUrl, head));
             } else {
-                listener.getLogger().println("Rejecting failed " + head);
-                verifyGerrit(generateFailedCommand(buildUrl, head));
-            }
 
+                if (r.isBetterOrEqualTo(Result.SUCCESS)) {
+                    listener.getLogger().println("Approving " + head);
+                    verifyGerrit(generateApproveCommand(buildUrl, head));
+                } else if (r.isBetterOrEqualTo(Result.UNSTABLE)) {
+                    listener.getLogger().println("Rejecting unstable " + head);
+                    verifyGerrit(generateUnstableCommand(buildUrl, head));
+                } else {
+                    listener.getLogger().println("Rejecting failed " + head);
+                    verifyGerrit(generateFailedCommand(buildUrl, head));
+                }
+            }
         } catch (IOException e) {
             listener.getLogger().println(e.getMessage());
             e.printStackTrace(listener.getLogger());
@@ -217,6 +208,7 @@ public class GerritNotifier extends Notifier implements Serializable {
         } catch (InterruptedException e) {
             listener.getLogger().println(e.getMessage());
             e.printStackTrace();
+            return NO_BUILD_URL;
         }
         String buildUrl = NO_BUILD_URL;
         if (vars.containsKey("BUILD_URL")) {
