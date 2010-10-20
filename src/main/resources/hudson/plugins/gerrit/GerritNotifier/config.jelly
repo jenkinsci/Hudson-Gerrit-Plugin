@@ -37,16 +37,27 @@
                     <f:textbox field="gerrit_port" default="29418"/>
                 </f:entry>
 
-                <f:entry title="Gerrit Approve Value" field="approve_value">
+                <f:entry title="Verify Approve Value" field="approve_value">
                     <f:textbox field="approve_value" default="+1"/>
                 </f:entry>
 
-                <f:entry title="Gerrit Unstable Value" field="unstable_value">
+                <f:entry title="Verify Unstable Value" field="unstable_value">
                     <f:textbox field="unstable_value" default="-1"/>
                 </f:entry>
 
-                <f:entry title="Gerrit Reject Value" field="reject_value">
+                <f:entry title="Verify Reject Value" field="reject_value">
                     <f:textbox field="reject_value" default="-1"/>
+                </f:entry>
+                <f:entry title="Review Approve Value" field="review_approve_value">
+                    <f:textbox field="review_approve_value" default="0"/>
+                </f:entry>
+
+                <f:entry title="Review Unstable Value" field="review_unstable_value">
+                    <f:textbox field="review_unstable_value" default="0"/>
+                </f:entry>
+
+                <f:entry title="Review Reject Value" field="review_reject_value">
+                    <f:textbox field="review_reject_value" default="0"/>
                 </f:entry>
           </f:advanced>
         </f:section>

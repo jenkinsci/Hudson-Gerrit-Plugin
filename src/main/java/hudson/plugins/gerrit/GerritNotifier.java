@@ -38,7 +38,11 @@ public class GerritNotifier extends Notifier implements Serializable {
     private final String approve_value;
     private final String unstable_value;
     private final String reject_value;
-    private final String gerrit_approve_command = "gerrit approve --verified=%s --message=\"%s\" %s";
+    private String review_approve_value = "0";
+    private String review_unstable_value = "0";
+    private String review_reject_value = "0";
+
+    private final String gerrit_approve_command = "gerrit approve --verified=%s --code-review=%s --message=\"%s\" %s";
     protected static final String NO_BUILD_URL = "No build url.";
     private final String private_key_file_path;
     private final String passPhrase;
@@ -94,8 +98,9 @@ public class GerritNotifier extends Notifier implements Serializable {
     @SuppressWarnings({"UnusedDeclaration"})
     @DataBoundConstructor
     public GerritNotifier(String git_home, String gerrit_host, int gerrit_port,
-            String gerrit_username, String approve_value, String unstable_value, String reject_value, String private_key_file_path,
-            String passPhrase) {
+            String gerrit_username, String approve_value, String unstable_value, String reject_value,
+            String review_approve_value, String review_unstable_value, String review_reject_value,
+            String private_key_file_path, String passPhrase) {
         this.git_home = git_home;
         this.gerrit_host = gerrit_host;
         this.gerrit_port = gerrit_port;
@@ -103,6 +108,9 @@ public class GerritNotifier extends Notifier implements Serializable {
         this.approve_value = approve_value;
         this.unstable_value = unstable_value;
         this.reject_value = reject_value;
+        this.review_approve_value = review_approve_value;
+        this.review_unstable_value = review_unstable_value;
+        this.review_reject_value = review_reject_value;
         this.private_key_file_path = private_key_file_path;
         this.passPhrase = passPhrase;
         this.marker = new SSHMarker();
@@ -115,24 +123,28 @@ public class GerritNotifier extends Notifier implements Serializable {
     }
 
 
-    public String generateComment(String verify_value, String message, String revision) {
-        return String.format(gerrit_approve_command, verify_value, message, revision);
+    public String generateComment(String verify_value, String review_value, String message, String revision) {
+        if(review_value == null)
+        {
+            review_value = "0";
+        }
+        return String.format(gerrit_approve_command, verify_value, review_value, message, revision);
     }
 
     public String generateApproveCommand(final String jobUrl, final String revision) {
-        return generateComment(approve_value, jobUrl, revision);
+        return generateComment(approve_value, review_approve_value, jobUrl, revision);
     }
 
     public String generateUnstableCommand(final String jobUrl, final String revision) {
-        return generateComment(unstable_value, "Build is unstable " + jobUrl, revision);
+        return generateComment(unstable_value, review_unstable_value, "Build is unstable " + jobUrl, revision);
     }
 
     public String generateFailedCommand(final String jobUrl, final String revision) {
-        return generateComment(reject_value, "Build failed " + jobUrl, revision);
+        return generateComment(reject_value, review_reject_value, "Build failed " + jobUrl, revision);
     }
 
     public String generateDidNotFinishCommand(final String jobUrl, final String revision) {
-        return generateComment("0", "Build did not finish, " + jobUrl, revision);
+        return generateComment("0", "0", "Build did not finish, " + jobUrl, revision);
     }
 
     private void verifyGerrit(String message)
