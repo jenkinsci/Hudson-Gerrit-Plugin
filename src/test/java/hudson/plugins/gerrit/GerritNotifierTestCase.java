@@ -44,7 +44,7 @@ public class GerritNotifierTestCase extends HudsonTestCase{
         marker = mock(SSHMarker.class);
         git = mock(GitTools.class);
         notifier = new GerritNotifier(gitDir, hostName, 29418, userName, "+1", "-1", "-1",
-            "0", "0", "0", privateKeyFilePath, passPhrase);
+            privateKeyFilePath, passPhrase);
         notifier.setGitTools(git);
         notifier.setMarker(marker);
         when(git.getHead(Matchers.<File>any(), eq(".git"))).thenReturn(id);
